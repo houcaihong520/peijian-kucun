@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>配件库存查询</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F2937'/%3E%3Cpath d='M20 40a14 14 0 1 1 24-12l-3.5 3.5a10 10 0 1 0-8 8L36 43a14 14 0 0 1-16-3z' fill='%23F5A623'/%3E%3Ccircle cx='42' cy='42' r='9' fill='none' stroke='%23F5A623' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#F2F4F7;
+    --card:#FFFFFF;
+    --ink:#1F2937;
+    --sub:#6B7280;
+    --line:#E5E7EB;
+    --accent:#E8590C;
+    --ok:#087F5B;
+    --warn:#D9480F;
+    --chip:#EDEFF3;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+  /* ===== 头部 ===== */
+  header{padding:24px 0 4px}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  h1{font-size:26px;font-weight:800;letter-spacing:.5px}
+  .tag{
+    font-size:12px;font-weight:600;color:var(--accent);
+    border:1px solid rgba(232,89,12,.35);background:rgba(232,89,12,.08);
+    padding:2px 8px;border-radius:999px;
+  }
+  .sub{color:var(--sub);font-size:13px;margin-top:4px}
+
+  /* ===== 统计条 ===== */
+  .stats{
+    display:flex;gap:8px;margin:16px 0 12px;
+  }
+  .stat{
+    flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;text-align:center;
+  }
+  .stat b{display:block;font-size:22px;font-weight:800}
+  .stat span{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+  .stat.warn b{color:var(--warn)}
+
+  /* ===== 搜索 ===== */
+  .search{
+    position:sticky;top:0;z-index:10;padding:12px 0 8px;background:var(--bg);
+  }
+  .box{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:0 12px;min-height:48px;
+  }
+  .box svg{flex:none;color:var(--sub)}
+  .box input{
+    flex:1;border:none;outline:none;background:transparent;
+    font-size:16px;color:var(--ink);min-height:46px;width:100%;
+  }
+  .box input::placeholder{color:#9CA3AF}
+  .box .clear{
+    display:none;border:none;background:none;color:var(--sub);
+    font-size:18px;padding:4px 6px;cursor:pointer;line-height:1;
+  }
+  .box.has .clear{display:block}
+
+  /* ===== 分类筛选 ===== */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .result-count{font-size:12px;color:var(--sub);padding:4px 2px 8px}
+
+  /* ===== 配件列表 ===== */
+  .list{display:flex;flex-direction:column;gap:8px}
+  .item{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;display:flex;align-items:center;gap:12px;
+  }
+  .item .info{flex:1;min-width:0}
+  .name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .name{font-size:16px;font-weight:700}
+  .cat{
+    font-size:11px;font-weight:600;color:var(--sub);
+    background:var(--chip);padding:2px 8px;border-radius:999px;
+  }
+  .cat.none{color:#9CA3AF}
+  .model{font-size:13px;color:var(--sub);margin-top:2px}
+  .model b{font-weight:600;color:var(--ink)}
+  .note{font-size:12px;color:var(--sub);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .note .dot{width:3px;height:3px;border-radius:50%;background:#D1D5DB;flex:none}
+  .badge{
+    flex:none;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;
+  }
+  .badge.ok{color:var(--ok);background:rgba(8,127,91,.10)}
+  .badge.warn{color:var(--warn);background:rgba(217,79,15,.10)}
+  .stock{
+    flex:none;text-align:right;min-width:64px;
+  }
+  .stock b{display:block;font-size:22px;font-weight:800;line-height:1.1}
+  .stock b.low{color:var(--warn)}
+  .stock span{font-size:12px;color:var(--sub)}
+  .date{font-size:11px;color:#9CA3AF;margin-top:2px}
+
+  /* ===== 空态 / 页脚 ===== */
+  .empty{
+    text-align:center;color:var(--sub);padding:56px 0;font-size:14px;
+  }
+  .empty b{display:block;font-size:16px;color:var(--ink);margin-bottom:6px}
+  footer{
+    margin-top:28px;padding-top:16px;border-top:1px solid var(--line);
+    text-align:center;color:#9CA3AF;font-size:12px;
+  }
+
+  @media (min-width:768px){
+    .list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>配件库存</h1>
+      <span class="tag">同行采购查询</span>
+    </div>
+    <div class="sub">扫一扫直接查库存 · 数据定期更新</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="stTotal">0</b><span>在库配件</span></div>
+    <div class="stat warn"><b id="stWarn">0</b><span>需补货</span></div>
+  </div>
+
+  <div class="search">
+    <div class="box" id="box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="search" placeholder="搜索配件名称、型号…" autocomplete="off">
+      <button class="clear" id="clearBtn" aria-label="清空">×</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="result-count" id="count"></div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty" hidden>
+    <b>没有找到匹配的配件</b>
+    换个关键词试试，或直接联系老板问
+  </div>
+
+  <footer>数据同步自库存台账 · 供同行采购参考</footer>
+</div>
+
+<script>
+const RAW_DATA = [
+  {"name":"1号神垫","cat":"","model":"1号","unit":"张","stock":8,"date":"2026/10/10","note":"CIVI系列、OPPO RENO通用","status":"正常"},
+  {"name":"3号神垫","cat":"","model":"3号","unit":"张","stock":3,"date":"2026/09/20","note":"用量最大，注意补货","status":"需补货"},
+  {"name":"7号神垫","cat":"","model":"7号","unit":"张","stock":6,"date":"2026/10/05","note":"华为NOVA系列、一加通用","status":"正常"},
+  {"name":"华为MATE40盖板","cat":"盖板","model":"MATE40","unit":"片","stock":12,"date":"2026/10/12","note":"曲面屏，注意防碎","status":"正常"},
+  {"name":"小米13Pro排线","cat":"总成","model":"小米13Pro","unit":"条","stock":4,"date":"2026/10/08","note":"易损件，常备","status":"需补货"},
+  {"name":"9号神垫","cat":"","model":"9号","unit":"张","stock":2,"date":"2026/09/28","note":"四曲屏专用，库存偏低","status":"需补货"},
+  {"name":"vivo X90电池","cat":"电池","model":"X90","unit":"个","stock":10,"date":"2026/10/15","note":"带快充认证","status":"正常"}
+];
+
+const state = { q:"", cat:"全部" };
+
+function catLabel(c){ return c === "" ? "未分类" : c; }
+
+function buildChips(){
+  const cats = ["全部"].concat(
+    Array.from(new Set(RAW_DATA.map(r => r.cat).filter(c => c !== ""))).sort()
+  );
+  const el = document.getElementById("chips");
+  el.innerHTML = cats.map(c =>
+    `<button class="chip${c===state.cat?" on":""}" data-cat="${c}">${c}</button>`
+  ).join("");
+  el.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.cat = btn.dataset.cat;
+      refresh();
+    });
+  });
+}
+
+function matches(r){
+  const q = state.q.trim().toLowerCase();
+  if(q){
+    const hay = [r.name, r.model, r.note, catLabel(r.cat)].join(" ").toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  if(state.cat !== "全部" && r.cat !== state.cat) return false;
+  return true;
+}
+
+function render(list){
+  const el = document.getElementById("list");
+  if(list.length === 0){
+    el.innerHTML = "";
+    document.getElementById("empty").hidden = false;
+    return;
+  }
+  document.getElementById("empty").hidden = true;
+  el.innerHTML = list.map(r => {
+    const warn = r.status === "需补货";
+    const cat = r.cat === "" ? `<span class="cat none">未分类</span>`
+      : `<span class="cat">${r.cat}</span>`;
+    const badge = warn ? `<span class="badge warn">需补货</span>` : `<span class="badge ok">有货</span>`;
+    return `
+    <div class="item">
+      <div class="info">
+        <div class="name-row"><span class="name">${r.name}</span>${cat}${badge}</div>
+        ${r.model ? `<div class="model">型号：<b>${r.model}</b></div>` : ""}
+        ${r.note ? `<div class="note"><span>${r.note}</span></div>` : ""}
+        <div class="date">最近入库 ${r.date}</div>
+      </div>
+      <div class="stock">
+        <b class="${warn?"low":""}">${r.stock}</b>
+        <span>${r.unit}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function refresh(){
+  const list = RAW_DATA.filter(matches);
+  render(list);
+  document.getElementById("stTotal").textContent = RAW_DATA.length;
+  document.getElementById("stWarn").textContent = RAW_DATA.filter(r => r.status === "需补货").length;
+  document.getElementById("count").textContent = `共 ${list.length} 项`;
+  document.getElementById("box").classList.toggle("has", state.q !== "");
+}
+
+document.getElementById("q").addEventListener("input", e => {
+  state.q = e.target.value;
+  refresh();
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+  const q = document.getElementById("q");
+  q.value = "";
+  state.q = "";
+  refresh();
+  q.focus();
+});
+
+buildChips();
+refresh();
+</script>
+</body>
+</html>
